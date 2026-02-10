@@ -17,6 +17,7 @@ npx -y github:FYZAFH/mcp-codex-dev
 
 | Tool | Description |
 |------|-------------|
+|`codex_exec`|Clean dialogue without templates, supports session resume|
 | `codex_write` | Write code via Codex CLI, supports session resume |
 | `codex_review` | Code review (spec + quality in parallel), supports resume |
 | `codex_health` | Environment and config diagnostics |

@@ -1,6 +1,7 @@
 # Codex Dev MCP Server
 
-MCP Server for integrating Codex CLI into Claude Code workflows with stateful session management.
+MCP Server for integrating Codex CLI into Claude Code workflows with stateful session management. On the basis of using Codex, a small session management module has been added (via the `codex_session_discard` and `codex_session_list` tools), and a visualization interface for Codex monitoring has been added (because Codex is really too slow, and without progress monitoring, it's often thought to have crashed).
+<img width="1896" height="952" alt="image" src="https://github.com/user-attachments/assets/f7ba637c-0aa1-478d-a7ed-cb93c34c46b3" />
 
 ## Features
 

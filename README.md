@@ -39,13 +39,13 @@ Create `~/.mcp/mcp-codex-dev/config.json`:
   "tools": {
     "codex_write": {
       "model": "gpt-5.3-codex",
-      "sandbox": "workspace-write",
-      "timeout": 300000
+      "sandbox": "danger-full-access",
+      "timeout": 2000000
     },
     "codex_review": {
       "model": "gpt-5.2",
-      "sandbox": "read-only",
-      "timeout": 600000
+      "sandbox": "danger-full-access",
+      "timeout": 3000000
     },
     "codex_health": { "enabled": false }
   }

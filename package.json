@@ -1,0 +1,45 @@
+{
+  "name": "mcp-codex-dev",
+  "version": "1.0.0",
+  "description": "MCP Server for Codex CLI integration - stateful code writing and review workflows",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-codex-dev": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "codex",
+    "claude",
+    "code-review",
+    "ai-development"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FYZAFH/mcp-codex-dev.git"
+  },
+  "homepage": "https://github.com/FYZAFH/mcp-codex-dev",
+  "files": [
+    "dist",
+    "templates"
+  ]
+}

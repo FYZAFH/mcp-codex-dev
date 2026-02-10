@@ -33,7 +33,7 @@ export interface CodexFileChangeEvent extends CodexEvent {
 
 export interface TrackedSession {
   sessionId: string;
-  type: "write" | "review";
+  type: "write" | "review" | "exec";
   instruction?: string;
   baseSha?: string;
   headSha?: string;

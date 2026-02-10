@@ -79,7 +79,7 @@ export async function codexSessionDiscard(
 }
 
 export const CodexSessionListParamsSchema = z.object({
-  type: z.enum(["write", "review", "all"]).optional().default("all"),
+  type: z.enum(["write", "review", "exec", "all"]).optional().default("all"),
   status: z
     .enum(["active", "completed", "abandoned", "all"])
     .optional()
@@ -93,7 +93,7 @@ export async function codexSessionList(
 ): Promise<{
   sessions: Array<{
     sessionId: string;
-    type: "write" | "review";
+    type: "write" | "review" | "exec";
     createdAt: string;
     status: string;
   }>;

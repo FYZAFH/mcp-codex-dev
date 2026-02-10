@@ -4,6 +4,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { codexWrite } from "./tools/codex-write.js";
+import { codexExec } from "./tools/codex-exec.js";
 import { codexReview } from "./tools/codex-review.js";
 import { codexHealth } from "./tools/codex-health.js";
 import {
@@ -49,6 +50,33 @@ async function main() {
     name: "codex-dev",
     version: "1.0.0",
   });
+
+  // ─── codex_exec ──────────────────────────────────────────────────────
+  if (isToolEnabled(config, "codex_exec")) {
+    server.tool(
+      "codex_exec",
+      "Invoke Codex CLI with a plain instruction. No template, no context wrapping — just raw execution. Supports session resume.",
+      {
+        instruction: z.string().describe("Instruction for Codex CLI"),
+        sessionId: z
+          .string()
+          .optional()
+          .describe("Resume an existing session by ID"),
+        workingDirectory: z.string().optional().describe("Working directory path"),
+      },
+      async (params, extra) => {
+        const result = await codexExec(params, extra);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+    );
+  }
 
   // ─── codex_write ──────────────────────────────────────────────────────
   if (isToolEnabled(config, "codex_write")) {
@@ -162,7 +190,7 @@ async function main() {
       "List tracked Codex sessions. Can filter by type and status.",
       {
         type: z
-          .enum(["write", "review", "all"])
+          .enum(["write", "review", "exec", "all"])
           .optional()
           .default("all")
           .describe("Session type filter"),

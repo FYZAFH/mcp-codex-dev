@@ -33,17 +33,17 @@ Create `~/.mcp/mcp-codex-dev/config.json`:
 
 ```json
 {
-  "model": "o4-mini",
+  "model": "gpt-5.2",
   "sandbox": "danger-full-access",
   "timeout": 300000,
   "tools": {
     "codex_write": {
-      "model": "o4-mini",
+      "model": "gpt-5.3-codex",
       "sandbox": "workspace-write",
       "timeout": 300000
     },
     "codex_review": {
-      "model": "gpt-4.1-mini",
+      "model": "gpt-5.2",
       "sandbox": "read-only",
       "timeout": 600000
     },

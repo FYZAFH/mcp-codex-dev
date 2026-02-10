@@ -27,6 +27,25 @@ or
 claude mcp add mcp-codex-dev -- npx -y mcp-codex-dev 
 ```
 
+Windows OS:
+
+```
+{
+  "mcpServers": {
+    "mcp-codex-dev": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "mcp-codex-dev"]
+    }
+  }
+}
+```
+
+or
+
+```powershell
+claude mcp add mcp-codex-dev -- cmd /c npx -y mcp-codex-dev
+```
+
 ## Tools
 
 | Tool | Description |

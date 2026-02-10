@@ -10,7 +10,7 @@ MCP Server for integrating [Codex CLI](https://github.com/openai/codex) into Cla
 Prerequisites: [Codex CLI](https://github.com/openai/codex) installed and configured.
 
 ```bash
-npx -y github:FYZAFH/mcp-codex-dev
+claude mcp add mcp-codex-dev -- npx -y github:FYZAFH/mcp-codex-dev
 ```
 
 ## Tools

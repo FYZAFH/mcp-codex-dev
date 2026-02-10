@@ -62,7 +62,7 @@ All config files use the same JSON format. Top-level fields are global defaults;
 
 ```json
 {
-  "model": "o4-mini",
+  "model": "gpt-5.2",
   "sandbox": "danger-full-access",
   "timeout": 300000,
   "sessionCleanupHours": 48,
@@ -70,16 +70,16 @@ All config files use the same JSON format. Top-level fields are global defaults;
   "progressPort": 23120,
   "tools": {
     "write": {
-      "model": "o4-mini",
+      "model": "gpt-5.3-codex",
       "sandbox": "workspace-write",
       "timeout": 300000
     },
     "review": {
-      "model": "gpt-4.1-mini",
+      "model": "gpt-5.2",
       "sandbox": "read-only",
       "timeout": 600000
     },
-    "session_discard": { "enabled": false },
+    "session_discard": { "enabled": true },
     "session_list": { "enabled": true },
     "health": { "enabled": true }
   }
@@ -127,10 +127,10 @@ Per-tool example:
 
 ```json
 {
-  "model": "o4-mini",
+  "model": "gpt-5.2",
   "tools": {
     "review": {
-      "model": "gpt-4.1-mini",
+      "model": "gpt-5.2",
       "sandbox": "read-only"
     }
   }

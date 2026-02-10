@@ -86,14 +86,8 @@ export interface CodexDevConfig {
   reviewTemplate?: string;
   progressPort?: number;
 
-  // Per-tool overrides
-  tools?: {
-    write?: ToolConfig;
-    review?: ToolConfig;
-    session_discard?: { enabled?: boolean };
-    session_list?: { enabled?: boolean };
-    health?: { enabled?: boolean };
-  };
+  // Per-tool overrides (keyed by tool name, e.g. "codex_write", "codex_review")
+  tools?: Record<string, ToolConfig>;
 }
 
 export interface ResolvedToolConfig {

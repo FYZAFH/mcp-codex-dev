@@ -53,12 +53,6 @@ const ToolConfigSchema = z
   })
   .strip();
 
-const ToolToggleSchema = z
-  .object({
-    enabled: z.boolean().optional(),
-  })
-  .strip();
-
 const ConfigSchema = z
   .object({
     model: z.string().min(1).optional(),
@@ -67,16 +61,7 @@ const ConfigSchema = z
     sessionCleanupHours: z.number().int().positive().optional(),
     reviewTemplate: z.string().min(1).optional(),
     progressPort: z.number().int().positive().optional(),
-    tools: z
-      .object({
-        write: ToolConfigSchema.optional(),
-        review: ToolConfigSchema.optional(),
-        session_discard: ToolToggleSchema.optional(),
-        session_list: ToolToggleSchema.optional(),
-        health: ToolToggleSchema.optional(),
-      })
-      .strip()
-      .optional(),
+    tools: z.record(z.string(), ToolConfigSchema).optional(),
   })
   .strip();
 
@@ -161,7 +146,7 @@ export async function loadConfigWithDiagnostics(
  */
 export function getToolConfig(
   config: CodexDevConfig,
-  tool: "write" | "review"
+  tool: string
 ): ResolvedToolConfig {
   const toolCfg = config.tools?.[tool];
   return {
@@ -176,10 +161,7 @@ export function getToolConfig(
  * Check whether a tool is enabled (default: true).
  */
 export function isToolEnabled(config: CodexDevConfig, tool: string): boolean {
-  const tools = config.tools as
-    | Record<string, { enabled?: boolean } | undefined>
-    | undefined;
-  return tools?.[tool]?.enabled ?? true;
+  return config.tools?.[tool]?.enabled ?? true;
 }
 
 export function clearConfigCache(): void {
@@ -290,11 +272,11 @@ function applyEnvOverrides(
   }
 
   if (process.env.CODEX_DEV_REVIEW_MODEL) {
-    // Map to tools.review.model for backward-compatible env override
+    // Map to tools.codex_review.model
     result.tools = {
       ...result.tools,
-      review: {
-        ...result.tools?.review,
+      codex_review: {
+        ...result.tools?.codex_review,
         model: process.env.CODEX_DEV_REVIEW_MODEL,
       },
     };

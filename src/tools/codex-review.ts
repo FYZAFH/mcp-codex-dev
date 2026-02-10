@@ -40,7 +40,7 @@ export async function codexReview(
     workingDirectory: params.workingDirectory,
   });
   const config = await loadConfig({ workingDirectory: params.workingDirectory });
-  const toolCfg = getToolConfig(config, "review");
+  const toolCfg = getToolConfig(config, "codex_review");
 
   const reviewType = params.reviewType || "full";
 

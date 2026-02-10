@@ -51,7 +51,7 @@ async function main() {
   });
 
   // ─── codex_write ──────────────────────────────────────────────────────
-  if (isToolEnabled(config, "write")) {
+  if (isToolEnabled(config, "codex_write")) {
     server.tool(
       "codex_write",
       "Invoke Codex CLI to write code. Supports creating new sessions and resuming existing sessions. " +
@@ -84,7 +84,7 @@ async function main() {
   }
 
   // ─── codex_review ─────────────────────────────────────────────────────
-  if (isToolEnabled(config, "review")) {
+  if (isToolEnabled(config, "codex_review")) {
     server.tool(
       "codex_review",
       "Invoke Codex CLI for code review. Uses built-in code-reviewer template. " +
@@ -127,7 +127,7 @@ async function main() {
   }
 
   // ─── codex_session_discard ────────────────────────────────────────────
-  if (isToolEnabled(config, "session_discard")) {
+  if (isToolEnabled(config, "codex_session_discard")) {
     server.tool(
       "codex_session_discard",
       "Discard Codex sessions. By default, refuses to discard sessions marked active unless force=true.",
@@ -156,7 +156,7 @@ async function main() {
   }
 
   // ─── codex_session_list ───────────────────────────────────────────────
-  if (isToolEnabled(config, "session_list")) {
+  if (isToolEnabled(config, "codex_session_list")) {
     server.tool(
       "codex_session_list",
       "List tracked Codex sessions. Can filter by type and status.",
@@ -187,7 +187,7 @@ async function main() {
   }
 
   // codex_health
-  if (isToolEnabled(config, "health")) {
+  if (isToolEnabled(config, "codex_health")) {
     server.tool(
       "codex_health",
       "Run environment and configuration checks (Codex CLI, config, Git, filesystem).",

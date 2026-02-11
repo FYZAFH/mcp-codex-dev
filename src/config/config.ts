@@ -87,8 +87,7 @@ export async function loadConfigWithDiagnostics(
   config: CodexDevConfig;
   diagnostics: ConfigDiagnostics;
 }> {
-  const startDir = normalizeWorkingDirectory(options.workingDirectory);
-  const projectRoot = findGitRoot(startDir) ?? startDir;
+  const projectRoot = resolveProjectRoot(options.workingDirectory);
   const cached = cachedByProjectRoot.get(projectRoot);
   if (cached) {
     return cached;
@@ -166,6 +165,15 @@ export function isToolEnabled(config: CodexDevConfig, tool: string): boolean {
 
 export function clearConfigCache(): void {
   cachedByProjectRoot.clear();
+}
+
+/**
+ * Resolve the project root used for per-project storage/config.
+ * If inside a Git repo, this is the repo root; otherwise it's the resolved working directory.
+ */
+export function resolveProjectRoot(workingDirectory?: string): string {
+  const startDir = normalizeWorkingDirectory(workingDirectory);
+  return findGitRoot(startDir) ?? startDir;
 }
 
 // ─── Merge helpers ───────────────────────────────────────────────────────

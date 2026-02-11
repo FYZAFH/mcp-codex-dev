@@ -116,6 +116,9 @@ export class CodexExecutor {
     if (!options.sessionId) {
       const sandboxMode = options.sandbox || this.config.sandbox || "danger-full-access";
       args.push("--sandbox", sandboxMode);
+    } else {
+      // resume does not support --sandbox; bypass sandbox to allow file writes
+      args.push("--dangerously-bypass-approvals-and-sandbox");
     }
 
     return { args, stdinContent: instruction };
@@ -150,6 +153,9 @@ export class CodexExecutor {
       const sandboxMode = options.sandbox || this.config.sandbox || "danger-full-access";
       args.push("--sandbox", sandboxMode);
       args.push("-c", "approval_policy=on-request");
+    } else {
+      // resume does not support --sandbox; bypass to allow shell commands (e.g. git diff)
+      args.push("--dangerously-bypass-approvals-and-sandbox");
     }
 
     return { args, stdinContent: reviewPrompt };

@@ -34,7 +34,9 @@ export async function codexExec(
     progressServer.startOperation(operationId, "write", params.instruction.slice(0, 120));
 
     if (params.sessionId) {
-      await sessionManager.updateStatus(params.sessionId, "active");
+      await sessionManager.updateStatus(params.sessionId, "active", {
+        workingDirectory: params.workingDirectory,
+      });
     }
 
     let result;
@@ -67,8 +69,12 @@ export async function codexExec(
 
     const trackedStatus = result.exitCode !== 0 ? "abandoned" : "completed";
     if (params.sessionId) {
-      await sessionManager.markResumed(params.sessionId);
-      await sessionManager.updateStatus(params.sessionId, trackedStatus);
+      await sessionManager.markResumed(params.sessionId, {
+        workingDirectory: params.workingDirectory,
+      });
+      await sessionManager.updateStatus(params.sessionId, trackedStatus, {
+        workingDirectory: params.workingDirectory,
+      });
     } else {
       await sessionManager.track({
         sessionId,
@@ -76,7 +82,7 @@ export async function codexExec(
         instruction: params.instruction,
         createdAt: new Date().toISOString(),
         status: trackedStatus,
-      });
+      }, { workingDirectory: params.workingDirectory });
     }
 
     let status: CodexWriteResult["status"] = "completed";
@@ -98,7 +104,13 @@ export async function codexExec(
     };
   } catch (error) {
     if (params.sessionId) {
-      try { await sessionManager.updateStatus(params.sessionId, "abandoned"); } catch { /* best effort */ }
+      try {
+        await sessionManager.updateStatus(params.sessionId, "abandoned", {
+          workingDirectory: params.workingDirectory,
+        });
+      } catch {
+        /* best effort */
+      }
     }
     const errorInfo = error as CodexErrorInfo;
     return {

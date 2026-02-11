@@ -20,7 +20,7 @@ export const CodexHealthParamsSchema = z.object({
     .boolean()
     .optional()
     .default(false)
-    .describe("Create ~/.mcp/mcp-codex-dev if missing"),
+    .describe("Create tracking dirs if missing (~/.mcp/mcp-codex-dev and <project>/.mcp/mcp-codex-dev)"),
 });
 
 export type CodexHealthParams = z.infer<typeof CodexHealthParamsSchema>;
@@ -63,8 +63,20 @@ export async function codexHealth(params: CodexHealthParams): Promise<{
   // Filesystem / tracking
   const codexHomeDir = path.join(os.homedir(), ".codex");
   const codexCliConfigToml = path.join(codexHomeDir, "config.toml");
-  const trackingDir = MCP_DATA_DIR;
+  const mcpDataDir = MCP_DATA_DIR;
+  const projectRoot = diagnostics.projectRoot ?? workingDirectory;
+  const trackingDir = path.join(projectRoot, ".mcp", "mcp-codex-dev");
   const codexSessionsDir = path.join(codexHomeDir, "sessions");
+
+  const mcpData: {
+    dir: string;
+    exists: boolean;
+    writable?: boolean;
+    error?: string;
+  } = {
+    dir: mcpDataDir,
+    exists: fs.existsSync(mcpDataDir),
+  };
 
   const tracking: {
     dir: string;
@@ -76,13 +88,25 @@ export async function codexHealth(params: CodexHealthParams): Promise<{
     exists: fs.existsSync(trackingDir),
   };
 
-  if (!tracking.exists && params.ensureTrackingDir) {
+  if ((!tracking.exists || !mcpData.exists) && params.ensureTrackingDir) {
     try {
+      await fs.promises.mkdir(mcpDataDir, { recursive: true });
+      mcpData.exists = true;
       await fs.promises.mkdir(trackingDir, { recursive: true });
       tracking.exists = true;
     } catch (error) {
       tracking.error = error instanceof Error ? error.message : String(error);
       suggestions.push(`Fix filesystem permissions for ${trackingDir}.`);
+    }
+  }
+
+  if (mcpData.exists) {
+    try {
+      await fs.promises.access(mcpDataDir, fs.constants.W_OK);
+      mcpData.writable = true;
+    } catch {
+      mcpData.writable = false;
+      suggestions.push(`Make ${mcpDataDir} writable (used for config.json).`);
     }
   }
 
@@ -105,6 +129,7 @@ export async function codexHealth(params: CodexHealthParams): Promise<{
     workingDirectoryExists: fs.existsSync(workingDirectory),
     codexHomeDir,
     codexCliConfig: readCodexTomlModelHint(codexCliConfigToml),
+    mcpDataDir: mcpData,
     trackingDir: tracking,
     codexSessionsDir: {
       dir: codexSessionsDir,
@@ -168,8 +193,8 @@ export async function codexHealth(params: CodexHealthParams): Promise<{
   }
 
   // Session tracking stats
-  await sessionManager.load();
-  const sessions = await sessionManager.listAll();
+  await sessionManager.load({ workingDirectory });
+  const sessions = await sessionManager.listAll({ workingDirectory });
   checks.sessions = {
     trackedCount: sessions.length,
     byStatus: {

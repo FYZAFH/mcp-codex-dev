@@ -44,7 +44,9 @@ export async function codexWrite(
     // Track session as active before execution
     const preSessionId = params.sessionId;
     if (preSessionId) {
-      await sessionManager.updateStatus(preSessionId, "active");
+      await sessionManager.updateStatus(preSessionId, "active", {
+        workingDirectory: params.workingDirectory,
+      });
     }
 
     let result;
@@ -98,8 +100,12 @@ export async function codexWrite(
 
     if (params.sessionId) {
       // Resuming existing session
-      await sessionManager.markResumed(params.sessionId);
-      await sessionManager.updateStatus(params.sessionId, trackedStatus);
+      await sessionManager.markResumed(params.sessionId, {
+        workingDirectory: params.workingDirectory,
+      });
+      await sessionManager.updateStatus(params.sessionId, trackedStatus, {
+        workingDirectory: params.workingDirectory,
+      });
     } else {
       // New session
       await sessionManager.track({
@@ -108,7 +114,7 @@ export async function codexWrite(
         instruction: params.instruction,
         createdAt: new Date().toISOString(),
         status: trackedStatus,
-      });
+      }, { workingDirectory: params.workingDirectory });
     }
 
     return {
@@ -124,7 +130,13 @@ export async function codexWrite(
   } catch (error) {
     // Restore session status if it was set to "active" before failure
     if (params.sessionId) {
-      try { await sessionManager.updateStatus(params.sessionId, "abandoned"); } catch { /* best effort */ }
+      try {
+        await sessionManager.updateStatus(params.sessionId, "abandoned", {
+          workingDirectory: params.workingDirectory,
+        });
+      } catch {
+        /* best effort */
+      }
     }
     const errorInfo = error as CodexErrorInfo;
     return {

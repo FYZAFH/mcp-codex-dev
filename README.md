@@ -92,4 +92,4 @@ A local HTTP server starts at `http://localhost:23120` showing real-time progres
 
 ## License
 
-MIT
+No license.

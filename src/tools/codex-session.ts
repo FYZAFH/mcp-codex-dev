@@ -8,6 +8,10 @@ import { CodexSessionDiscardResult } from "../types/index.js";
 export const CodexSessionDiscardParamsSchema = z.object({
   sessionIds: z.array(z.string()).describe("List of session IDs to discard"),
   force: z.boolean().optional().default(false).describe("Force discard, ignore warnings"),
+  workingDirectory: z
+    .string()
+    .optional()
+    .describe("Project working directory (used to scope session tracking)"),
 });
 
 export type CodexSessionDiscardParams = z.infer<
@@ -36,7 +40,9 @@ export async function codexSessionDiscard(
         result.success = false;
         continue;
       }
-      const tracked = await sessionManager.get(sessionId);
+      const tracked = await sessionManager.get(sessionId, {
+        workingDirectory: params.workingDirectory,
+      });
       if (tracked?.status === "active" && !params.force) {
         result.failed.push({
           sessionId,
@@ -63,7 +69,9 @@ export async function codexSessionDiscard(
       }
 
       // Remove from our tracking
-      await sessionManager.remove(sessionId);
+      await sessionManager.remove(sessionId, {
+        workingDirectory: params.workingDirectory,
+      });
 
       result.discarded.push(sessionId);
     } catch (error) {
@@ -84,6 +92,10 @@ export const CodexSessionListParamsSchema = z.object({
     .enum(["active", "completed", "abandoned", "all"])
     .optional()
     .default("active"),
+  workingDirectory: z
+    .string()
+    .optional()
+    .describe("Project working directory (used to scope session tracking)"),
 });
 
 export type CodexSessionListParams = z.infer<typeof CodexSessionListParamsSchema>;
@@ -98,7 +110,9 @@ export async function codexSessionList(
     status: string;
   }>;
 }> {
-  let sessions = await sessionManager.listAll();
+  let sessions = await sessionManager.listAll({
+    workingDirectory: params.workingDirectory,
+  });
 
   if (params.type !== "all") {
     sessions = sessions.filter((s) => s.type === params.type);

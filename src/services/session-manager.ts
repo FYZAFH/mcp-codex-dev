@@ -1,87 +1,121 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { TrackedSession, SessionStore } from "../types/index.js";
-import { MCP_DATA_DIR } from "../config/config.js";
+import { resolveProjectRoot } from "../config/config.js";
 
-const TRACKING_DIR = MCP_DATA_DIR;
-const TRACKING_FILE = path.join(TRACKING_DIR, "sessions.json");
-const TRACKING_TMP = path.join(TRACKING_DIR, "sessions.json.tmp");
+type ProjectStore = {
+  projectRoot: string;
+  trackingDir: string;
+  trackingFile: string;
+  trackingTmp: string;
+  sessions: Map<string, TrackedSession>;
+  loaded: boolean;
+  writeQueue: Promise<void>;
+};
 
 class SessionManager {
-  private sessions: Map<string, TrackedSession> = new Map();
-  private loaded = false;
-  private writeQueue: Promise<void> = Promise.resolve();
+  private stores: Map<string, ProjectStore> = new Map();
 
-  async load(): Promise<void> {
-    if (this.loaded) return;
+  private getStore(workingDirectory?: string): ProjectStore {
+    const projectRoot = resolveProjectRoot(workingDirectory);
+    const existing = this.stores.get(projectRoot);
+    if (existing) return existing;
+
+    const trackingDir = path.join(projectRoot, ".mcp", "mcp-codex-dev");
+    const store: ProjectStore = {
+      projectRoot,
+      trackingDir,
+      trackingFile: path.join(trackingDir, "sessions.json"),
+      trackingTmp: path.join(trackingDir, "sessions.json.tmp"),
+      sessions: new Map(),
+      loaded: false,
+      writeQueue: Promise.resolve(),
+    };
+    this.stores.set(projectRoot, store);
+    return store;
+  }
+
+  async load(options: { workingDirectory?: string } = {}): Promise<void> {
+    const store = this.getStore(options.workingDirectory);
+    if (store.loaded) return;
 
     try {
-      if (fs.existsSync(TRACKING_FILE)) {
-        const content = await fs.promises.readFile(TRACKING_FILE, "utf-8");
+      if (fs.existsSync(store.trackingFile)) {
+        const content = await fs.promises.readFile(store.trackingFile, "utf-8");
         const data = JSON.parse(content) as SessionStore;
-        this.sessions = new Map(Object.entries(data.sessions));
+        store.sessions = new Map(Object.entries(data.sessions));
       }
     } catch {
-      this.sessions = new Map();
+      store.sessions = new Map();
     }
 
-    this.loaded = true;
+    store.loaded = true;
   }
 
-  private async save(): Promise<void> {
+  private async save(store: ProjectStore): Promise<void> {
     // Serialize writes through a queue to prevent concurrent corruption
-    this.writeQueue = this.writeQueue.then(() => this.doSave()).catch(() => {});
-    return this.writeQueue;
+    store.writeQueue = store.writeQueue.then(() => this.doSave(store)).catch(() => {});
+    return store.writeQueue;
   }
 
-  private async doSave(): Promise<void> {
-    await fs.promises.mkdir(TRACKING_DIR, { recursive: true });
+  private async doSave(store: ProjectStore): Promise<void> {
+    await fs.promises.mkdir(store.trackingDir, { recursive: true });
     const data: SessionStore = {
-      sessions: Object.fromEntries(this.sessions),
+      sessions: Object.fromEntries(store.sessions),
     };
     const content = JSON.stringify(data, null, 2);
     // Atomic write: write to temp file, then rename
-    await fs.promises.writeFile(TRACKING_TMP, content);
-    await fs.promises.rename(TRACKING_TMP, TRACKING_FILE);
+    await fs.promises.writeFile(store.trackingTmp, content);
+    await fs.promises.rename(store.trackingTmp, store.trackingFile);
   }
 
-  async track(session: TrackedSession): Promise<void> {
-    await this.load();
-    this.sessions.set(session.sessionId, session);
-    await this.save();
+  async track(session: TrackedSession, options: { workingDirectory?: string } = {}): Promise<void> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    store.sessions.set(session.sessionId, session);
+    await this.save(store);
   }
 
-  async get(sessionId: string): Promise<TrackedSession | undefined> {
-    await this.load();
-    return this.sessions.get(sessionId);
+  async get(sessionId: string, options: { workingDirectory?: string } = {}): Promise<TrackedSession | undefined> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    return store.sessions.get(sessionId);
   }
 
   async updateStatus(
     sessionId: string,
-    status: TrackedSession["status"]
+    status: TrackedSession["status"],
+    options: { workingDirectory?: string } = {}
   ): Promise<void> {
-    await this.load();
-    const session = this.sessions.get(sessionId);
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    const session = store.sessions.get(sessionId);
     if (session) {
       session.status = status;
       session.lastResumedAt = new Date().toISOString();
-      await this.save();
+      await this.save(store);
     }
   }
 
-  async markResumed(sessionId: string): Promise<void> {
-    await this.load();
-    const session = this.sessions.get(sessionId);
+  async markResumed(sessionId: string, options: { workingDirectory?: string } = {}): Promise<void> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    const session = store.sessions.get(sessionId);
     if (session) {
       session.lastResumedAt = new Date().toISOString();
-      await this.save();
+      await this.save(store);
     }
   }
 
-  async link(writeSessionId: string, reviewSessionId: string): Promise<void> {
-    await this.load();
-    const writeSession = this.sessions.get(writeSessionId);
-    const reviewSession = this.sessions.get(reviewSessionId);
+  async link(
+    writeSessionId: string,
+    reviewSessionId: string,
+    options: { workingDirectory?: string } = {}
+  ): Promise<void> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    const writeSession = store.sessions.get(writeSessionId);
+    const reviewSession = store.sessions.get(reviewSessionId);
 
     if (writeSession) {
       writeSession.linkedSessionId = reviewSessionId;
@@ -90,28 +124,30 @@ class SessionManager {
       reviewSession.linkedSessionId = writeSessionId;
     }
 
-    await this.save();
+    await this.save(store);
   }
 
-  async remove(sessionId: string): Promise<boolean> {
-    await this.load();
-    const existed = this.sessions.delete(sessionId);
+  async remove(sessionId: string, options: { workingDirectory?: string } = {}): Promise<boolean> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    const existed = store.sessions.delete(sessionId);
     if (existed) {
-      await this.save();
+      await this.save(store);
     }
     return existed;
   }
 
-  async removeMultiple(sessionIds: string[]): Promise<{
+  async removeMultiple(sessionIds: string[], options: { workingDirectory?: string } = {}): Promise<{
     removed: string[];
     notFound: string[];
   }> {
-    await this.load();
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
     const removed: string[] = [];
     const notFound: string[] = [];
 
     for (const sessionId of sessionIds) {
-      if (this.sessions.delete(sessionId)) {
+      if (store.sessions.delete(sessionId)) {
         removed.push(sessionId);
       } else {
         notFound.push(sessionId);
@@ -119,35 +155,45 @@ class SessionManager {
     }
 
     if (removed.length > 0) {
-      await this.save();
+      await this.save(store);
     }
 
     return { removed, notFound };
   }
 
-  async listActive(): Promise<TrackedSession[]> {
-    await this.load();
-    return Array.from(this.sessions.values()).filter(
+  async listActive(options: { workingDirectory?: string } = {}): Promise<TrackedSession[]> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    return Array.from(store.sessions.values()).filter(
       (s) => s.status === "active"
     );
   }
 
-  async listAll(): Promise<TrackedSession[]> {
-    await this.load();
-    return Array.from(this.sessions.values());
+  async listAll(options: { workingDirectory?: string } = {}): Promise<TrackedSession[]> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    return Array.from(store.sessions.values());
   }
 
-  async listByType(type: "write" | "review"): Promise<TrackedSession[]> {
-    await this.load();
-    return Array.from(this.sessions.values()).filter((s) => s.type === type);
+  async listByType(
+    type: "write" | "review",
+    options: { workingDirectory?: string } = {}
+  ): Promise<TrackedSession[]> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
+    return Array.from(store.sessions.values()).filter((s) => s.type === type);
   }
 
-  async cleanup(maxAgeHours: number = 48): Promise<string[]> {
-    await this.load();
+  async cleanup(
+    maxAgeHours: number = 48,
+    options: { workingDirectory?: string } = {}
+  ): Promise<string[]> {
+    const store = this.getStore(options.workingDirectory);
+    await this.load(options);
     const now = Date.now();
     const toRemove: string[] = [];
 
-    for (const [id, session] of this.sessions) {
+    for (const [id, session] of store.sessions) {
       const lastActivity = session.lastResumedAt || session.createdAt;
       const ageHours =
         (now - new Date(lastActivity).getTime()) / (1000 * 60 * 60);
@@ -159,11 +205,11 @@ class SessionManager {
     }
 
     for (const id of toRemove) {
-      this.sessions.delete(id);
+      store.sessions.delete(id);
     }
 
     if (toRemove.length > 0) {
-      await this.save();
+      await this.save(store);
     }
 
     return toRemove;

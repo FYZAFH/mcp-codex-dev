@@ -64,7 +64,13 @@ export async function codexReview(
   } catch (error) {
     // Restore session status if it was set to "active" before failure
     if (params.sessionId) {
-      try { await sessionManager.updateStatus(params.sessionId, "abandoned"); } catch { /* best effort */ }
+      try {
+        await sessionManager.updateStatus(params.sessionId, "abandoned", {
+          workingDirectory: params.workingDirectory,
+        });
+      } catch {
+        /* best effort */
+      }
     }
     const errorInfo = error as CodexErrorInfo;
     return {
@@ -117,13 +123,15 @@ async function runFullReview(
         headSha: params.headSha || "HEAD",
         createdAt: new Date().toISOString(),
         status: r.exitCode === 0 ? "completed" : "abandoned",
-      });
+      }, { workingDirectory: params.workingDirectory });
     }
   }
 
   // Link the two sessions together
   if (sessionIds.length === 2) {
-    await sessionManager.link(sessionIds[0], sessionIds[1]);
+    await sessionManager.link(sessionIds[0], sessionIds[1], {
+      workingDirectory: params.workingDirectory,
+    });
   }
 
   const success = specResult.exitCode === 0 && qualityResult.exitCode === 0;
@@ -165,7 +173,9 @@ async function runSingleReview(
 
   // Mark session as active before execution (for resume)
   if (params.sessionId) {
-    await sessionManager.updateStatus(params.sessionId, "active");
+    await sessionManager.updateStatus(params.sessionId, "active", {
+      workingDirectory: params.workingDirectory,
+    });
   }
 
   const parsed = await executeAndParse(executor, prompt, operationId, params, toolCfg, signal);
@@ -181,10 +191,13 @@ async function runSingleReview(
   }
 
   if (params.sessionId) {
-    await sessionManager.markResumed(params.sessionId);
+    await sessionManager.markResumed(params.sessionId, {
+      workingDirectory: params.workingDirectory,
+    });
     await sessionManager.updateStatus(
       params.sessionId,
-      parsed.exitCode === 0 ? "completed" : "abandoned"
+      parsed.exitCode === 0 ? "completed" : "abandoned",
+      { workingDirectory: params.workingDirectory }
     );
   } else {
     await sessionManager.track({
@@ -194,7 +207,7 @@ async function runSingleReview(
       headSha: params.headSha || "HEAD",
       createdAt: new Date().toISOString(),
       status: parsed.exitCode === 0 ? "completed" : "abandoned",
-    });
+    }, { workingDirectory: params.workingDirectory });
   }
 
   return {

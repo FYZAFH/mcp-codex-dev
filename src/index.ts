@@ -168,6 +168,10 @@ async function main() {
           .optional()
           .default(false)
           .describe("Force discard"),
+        workingDirectory: z
+          .string()
+          .optional()
+          .describe("Project working directory (used to scope session tracking)"),
       },
       async (params) => {
         const result = await codexSessionDiscard(params);
@@ -199,6 +203,10 @@ async function main() {
           .optional()
           .default("active")
           .describe("Session status filter"),
+        workingDirectory: z
+          .string()
+          .optional()
+          .describe("Project working directory (used to scope session tracking)"),
       },
       async (params) => {
         const result = await codexSessionList(params);
@@ -233,7 +241,7 @@ async function main() {
           .boolean()
           .optional()
           .default(false)
-          .describe("Create ~/.mcp/mcp-codex-dev if missing"),
+          .describe("Create tracking dirs if missing (~/.mcp/mcp-codex-dev and <project>/.mcp/mcp-codex-dev)"),
       },
       async (params) => {
         const result = await codexHealth(params);

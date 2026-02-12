@@ -55,8 +55,8 @@ claude mcp add mcp-codex-dev -- cmd /c npx -y mcp-codex-dev
 |`tdd`|write tool with built-in test-driven development prompt template|
 | `review` | Code review (spec + quality in parallel), supports resume |
 | `health` | Environment and config diagnostics |
-| `codex_session_list` | List tracked sessions |
-| `codex_session_discard` | Discard sessions |
+| `session_list` | List tracked sessions |
+| `session_discard` | Discard sessions |
 
 ## Configuration
 

@@ -90,6 +90,14 @@ Per-project config can be placed at `<project>/.mcp/mcp-codex-dev.config.json`.
 
 A local HTTP server starts at `http://localhost:23120` showing real-time progress. Configurable via `progressPort`.
 
+When multiple MCP server instances run simultaneously, they share a single progress page: the first instance binds the port and serves the UI, and other instances forward their progress events to it.
+
+## Session Tracking
+
+Session tracking metadata is stored per project at `<project>/.mcp/mcp-codex-dev/sessions.json` (where `<project>` is the Git repo root if applicable).
+
+Codex CLI's own session files remain in `~/.codex/sessions/<id>/`.
+
 ## License
 
 No license.

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { codexWrite } from "./tools/codex-write.js";
 import { codexExec } from "./tools/codex-exec.js";
 import { codexReview } from "./tools/codex-review.js";
+import { codexTdd } from "./tools/codex-tdd.js";
 import { codexHealth } from "./tools/codex-health.js";
 import {
   codexSessionDiscard,
@@ -51,10 +52,10 @@ async function main() {
     version: "1.0.0",
   });
 
-  // ─── codex_exec ──────────────────────────────────────────────────────
-  if (isToolEnabled(config, "codex_exec")) {
+  // ─── exec ──────────────────────────────────────────────────────────
+  if (isToolEnabled(config, "exec")) {
     server.tool(
-      "codex_exec",
+      "exec",
       "Invoke Codex CLI with a plain instruction. No template, no context wrapping — just raw execution. Supports session resume.",
       {
         instruction: z.string().describe("Instruction for Codex CLI"),
@@ -78,10 +79,10 @@ async function main() {
     );
   }
 
-  // ─── codex_write ──────────────────────────────────────────────────────
-  if (isToolEnabled(config, "codex_write")) {
+  // ─── write ─────────────────────────────────────────────────────────
+  if (isToolEnabled(config, "write")) {
     server.tool(
-      "codex_write",
+      "write",
       "Invoke Codex CLI to write code. Supports creating new sessions and resuming existing sessions. " +
         "For new sessions, pass instruction; for resuming, pass sessionId + instruction (revision feedback). " +
         "Returns sessionId for subsequent resumption.",
@@ -90,7 +91,7 @@ async function main() {
         sessionId: z
           .string()
           .optional()
-          .describe("Resume an existing session by ID (from previous codex_write return value)"),
+          .describe("Resume an existing session by ID (from previous write return value)"),
         workingDirectory: z.string().optional().describe("Working directory path"),
         planReference: z
           .string()
@@ -111,17 +112,76 @@ async function main() {
     );
   }
 
-  // ─── codex_review ─────────────────────────────────────────────────────
-  if (isToolEnabled(config, "codex_review")) {
+  // ─── tdd ───────────────────────────────────────────────────────────
+  if (isToolEnabled(config, "tdd")) {
     server.tool(
-      "codex_review",
+      "tdd",
+      "Invoke Codex CLI to implement code using strict Test-Driven Development (Red-Green-Refactor). " +
+        "Injects TDD methodology template that enforces writing tests before production code. " +
+        "Supports session resume for iterative TDD cycles.",
+      {
+        instruction: z
+          .string()
+          .describe(
+            "Detailed description of the feature or bug fix to implement using TDD"
+          ),
+        sessionId: z
+          .string()
+          .optional()
+          .describe(
+            "Resume an existing TDD session by ID (from previous tdd return value)"
+          ),
+        workingDirectory: z
+          .string()
+          .optional()
+          .describe("Working directory path"),
+        planReference: z
+          .string()
+          .optional()
+          .describe(
+            "Plan file path or content summary, used as coding context"
+          ),
+        taskContext: z
+          .string()
+          .optional()
+          .describe(
+            "Task position and context within the plan " +
+              "(e.g. 'Task 3 of 5: Implement validation logic. Depends on Task 2 auth module.')"
+          ),
+        testFramework: z
+          .string()
+          .optional()
+          .describe(
+            "Test framework hint (e.g. 'jest', 'vitest', 'pytest', 'go test')"
+          ),
+      },
+      async (params, extra) => {
+        const result = await codexTdd(params, extra);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
+    );
+  }
+
+  // ─── review ────────────────────────────────────────────────────────
+  if (isToolEnabled(config, "review")) {
+    server.tool(
+      "review",
       "Invoke Codex CLI for code review. Uses built-in code-reviewer template. " +
         "Pass git range and description info, returns structured review results. " +
         "Supports continuing previous review sessions via sessionId. " +
         "In 'full' mode, returns specSessionId and qualitySessionId separately (use with reviewType 'spec'/'quality' to resume each).",
       {
-        whatWasImplemented: z.string().describe("Brief description of what was implemented"),
-        planOrRequirements: z.string().describe("Original plan or requirements description"),
+        instruction: z
+          .string()
+          .describe("Original task instruction (same as what was sent to tdd)"),
+        whatWasImplemented: z.string().describe("Brief description of what was implemented (implementer's claim)"),
         baseSha: z.string().describe("Base commit SHA (review starting point)"),
         headSha: z
           .string()
@@ -136,8 +196,23 @@ async function main() {
         sessionId: z
           .string()
           .optional()
-          .describe("Continue an existing review session by ID (from previous codex_review return value)"),
+          .describe("Continue an existing review session by ID (from previous review return value)"),
         workingDirectory: z.string().optional().describe("Git repository directory"),
+        planReference: z
+          .string()
+          .optional()
+          .describe("Plan file path or content summary, used as coding context"),
+        taskContext: z
+          .string()
+          .optional()
+          .describe(
+            "Task position and context within the plan " +
+              "(e.g. 'Task 3 of 5: Implement validation logic')"
+          ),
+        testFramework: z
+          .string()
+          .optional()
+          .describe("Test framework used (e.g. 'jest', 'vitest', 'pytest', 'go test')"),
         additionalContext: z.string().optional().describe("Additional review context information"),
       },
       async (params, extra) => {
@@ -154,10 +229,10 @@ async function main() {
     );
   }
 
-  // ─── codex_session_discard ────────────────────────────────────────────
-  if (isToolEnabled(config, "codex_session_discard")) {
+  // ─── session_discard ───────────────────────────────────────────────
+  if (isToolEnabled(config, "session_discard")) {
     server.tool(
-      "codex_session_discard",
+      "session_discard",
       "Discard Codex sessions. By default, refuses to discard sessions marked active unless force=true.",
       {
         sessionIds: z
@@ -187,10 +262,10 @@ async function main() {
     );
   }
 
-  // ─── codex_session_list ───────────────────────────────────────────────
-  if (isToolEnabled(config, "codex_session_list")) {
+  // ─── session_list ──────────────────────────────────────────────────
+  if (isToolEnabled(config, "session_list")) {
     server.tool(
-      "codex_session_list",
+      "session_list",
       "List tracked Codex sessions. Can filter by type and status.",
       {
         type: z
@@ -222,10 +297,10 @@ async function main() {
     );
   }
 
-  // codex_health
-  if (isToolEnabled(config, "codex_health")) {
+  // ─── health ────────────────────────────────────────────────────────
+  if (isToolEnabled(config, "health")) {
     server.tool(
-      "codex_health",
+      "health",
       "Run environment and configuration checks (Codex CLI, config, Git, filesystem).",
       {
         workingDirectory: z

@@ -195,7 +195,7 @@ export function getProgressPageHtml(): string {
   <div id="main">
     <div class="empty-state" id="empty">
       <h2>Waiting for events...</h2>
-      <p>Start a codex_write or codex_review operation to see progress here.</p>
+      <p>Start a write or review operation to see progress here.</p>
     </div>
   </div>
 </div>
@@ -521,7 +521,7 @@ export function getProgressPageHtml(): string {
     sidebarList.innerHTML = '';
     selectedOpId = null;
     autoFollow = true;
-    main.innerHTML = '<div class="empty-state" id="empty"><h2>Waiting for events...</h2><p>Start a codex_write or codex_review operation to see progress here.</p></div>';
+    main.innerHTML = '<div class="empty-state" id="empty"><h2>Waiting for events...</h2><p>Start a write or review operation to see progress here.</p></div>';
     emptyEl = document.getElementById('empty');
   });
 

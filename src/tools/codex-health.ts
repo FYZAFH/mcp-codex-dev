@@ -183,10 +183,10 @@ export async function codexHealth(params: CodexHealthParams): Promise<{
           (git.repo as Record<string, unknown>).root = top.stdout.trim();
         }
       } else {
-        suggestions.push("Run codex_review in a Git repo (or set workingDirectory to a repo root).");
+        suggestions.push("Run review in a Git repo (or set workingDirectory to a repo root).");
       }
     } else if (!gitVersion.ok) {
-      suggestions.push("Install Git and ensure it is on PATH (required for codex_review).");
+      suggestions.push("Install Git and ensure it is on PATH (required for review).");
     }
 
     checks.git = git;

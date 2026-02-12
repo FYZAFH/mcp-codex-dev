@@ -24,7 +24,7 @@ export async function codexExec(
   extra?: { signal?: AbortSignal }
 ): Promise<CodexWriteResult> {
   const config = await loadConfig({ workingDirectory: params.workingDirectory });
-  const toolCfg = getToolConfig(config, "codex_exec");
+  const toolCfg = getToolConfig(config, "exec");
   const executor = await CodexExecutor.create({
     workingDirectory: params.workingDirectory,
   });

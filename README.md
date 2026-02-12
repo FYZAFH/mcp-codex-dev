@@ -70,7 +70,7 @@ Create `~/.mcp/mcp-codex-dev/config.json`:
   "tools": {
     "write": { "model": "gpt-5.3-codex", "sandbox": "danger-full-access", "timeout": 2000000},
     "review": { "model": "gpt-5.2", "sandbox": "danger-full-access", "timeout": 3000000},
-    "codex_health": { "enabled": false }
+    "health": { "enabled": false }
   }
 }
 ```

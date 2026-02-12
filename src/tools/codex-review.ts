@@ -16,8 +16,12 @@ import {
 } from "../types/index.js";
 
 export const CodexReviewParamsSchema = z.object({
-  whatWasImplemented: z.string().describe("Brief description of what was implemented"),
-  planOrRequirements: z.string().describe("Description/reference of the original plan or requirements"),
+  instruction: z
+    .string()
+    .describe(
+      "Original task instruction (same as what was sent to tdd)"
+    ),
+  whatWasImplemented: z.string().describe("Brief description of what was implemented (implementer's claim)"),
   baseSha: z.string().describe("Base commit SHA"),
   headSha: z.string().optional().default("HEAD").describe("Target commit SHA"),
   reviewType: z
@@ -27,6 +31,21 @@ export const CodexReviewParamsSchema = z.object({
     .describe("Review type: spec (compliance only), quality (code quality only), full (both in parallel)"),
   sessionId: z.string().uuid().optional().describe("Optional, existing review session ID for continuing review"),
   workingDirectory: z.string().optional().describe("Git repository directory"),
+  planReference: z
+    .string()
+    .optional()
+    .describe("Plan file path or content summary, used as coding context"),
+  taskContext: z
+    .string()
+    .optional()
+    .describe(
+      "Task position and context within the plan " +
+        "(e.g. 'Task 3 of 5: Implement validation logic. Depends on Task 2 auth module.')"
+    ),
+  testFramework: z
+    .string()
+    .optional()
+    .describe("Test framework used (e.g. 'jest', 'vitest', 'pytest', 'go test')"),
   additionalContext: z.string().optional().describe("Additional review context"),
 });
 
@@ -40,7 +59,7 @@ export async function codexReview(
     workingDirectory: params.workingDirectory,
   });
   const config = await loadConfig({ workingDirectory: params.workingDirectory });
-  const toolCfg = getToolConfig(config, "codex_review");
+  const toolCfg = getToolConfig(config, "review");
 
   const reviewType = params.reviewType || "full";
 
@@ -91,12 +110,12 @@ export async function codexReview(
 
 async function runFullReview(
   executor: CodexExecutor,
-  config: { reviewTemplate?: string },
+  config: { reviewTemplate?: string; specReviewTemplate?: string },
   toolCfg: ResolvedToolConfig,
   params: CodexReviewParams,
   signal?: AbortSignal
 ): Promise<CodexReviewResult> {
-  const specPrompt = buildSpecPrompt(params);
+  const specPrompt = await buildSpecPrompt(config, params);
   const qualityPrompt = await buildQualityPrompt(config, params);
 
   const specOpId = `review-spec-${crypto.randomUUID()}`;
@@ -157,7 +176,7 @@ async function runFullReview(
 
 async function runSingleReview(
   executor: CodexExecutor,
-  config: { reviewTemplate?: string },
+  config: { reviewTemplate?: string; specReviewTemplate?: string },
   toolCfg: ResolvedToolConfig,
   params: CodexReviewParams,
   type: "spec" | "quality",
@@ -165,7 +184,7 @@ async function runSingleReview(
 ): Promise<CodexReviewResult> {
   const prompt =
     type === "spec"
-      ? buildSpecPrompt(params)
+      ? await buildSpecPrompt(config, params)
       : await buildQualityPrompt(config, params);
 
   const operationId = `review-${type}-${crypto.randomUUID()}`;
@@ -270,10 +289,36 @@ async function executeAndParse(
 
 // ── Prompt builders ───────────────────────────────────────────────────
 
-function buildSpecPrompt(params: CodexReviewParams): string {
-  const base = fillTemplate(DEFAULT_SPEC_TEMPLATE, {
+function buildTaskSection(params: CodexReviewParams): string {
+  let section = params.instruction;
+
+  if (params.planReference) {
+    section += `\n\n### Context\n\n${params.planReference}`;
+  }
+
+  if (params.taskContext) {
+    section += `\n\n### Task Position\n\n${params.taskContext}`;
+  }
+
+  if (params.testFramework) {
+    section += `\n\n### Test Framework\n\nUse: ${params.testFramework}`;
+  }
+
+  return section;
+}
+
+async function buildSpecPrompt(
+  config: { specReviewTemplate?: string },
+  params: CodexReviewParams
+): Promise<string> {
+  const template = await loadSpecReviewTemplate({
+    specReviewTemplate: config.specReviewTemplate,
+    workingDirectory: params.workingDirectory,
+  });
+
+  const base = fillTemplate(template, {
+    TASK_SECTION: buildTaskSection(params),
     WHAT_WAS_IMPLEMENTED: params.whatWasImplemented,
-    PLAN_OR_REQUIREMENTS: params.planOrRequirements,
     BASE_SHA: params.baseSha,
     HEAD_SHA: params.headSha || "HEAD",
   });
@@ -293,12 +338,10 @@ async function buildQualityPrompt(
   });
 
   const base = fillTemplate(template, {
+    TASK_SECTION: buildTaskSection(params),
     WHAT_WAS_IMPLEMENTED: params.whatWasImplemented,
-    PLAN_OR_REQUIREMENTS: params.planOrRequirements,
     BASE_SHA: params.baseSha,
     HEAD_SHA: params.headSha || "HEAD",
-    DESCRIPTION: params.whatWasImplemented,
-    PLAN_REFERENCE: params.planOrRequirements,
   });
 
   return params.additionalContext
@@ -354,6 +397,52 @@ async function loadReviewTemplate(options: {
   return DEFAULT_QUALITY_TEMPLATE;
 }
 
+async function loadSpecReviewTemplate(options: {
+  specReviewTemplate?: string;
+  workingDirectory?: string;
+}): Promise<string> {
+  if (options.specReviewTemplate) {
+    const templateOverride = options.specReviewTemplate;
+    const candidates: string[] = [];
+
+    if (options.workingDirectory) {
+      candidates.push(path.resolve(options.workingDirectory, templateOverride));
+    }
+    candidates.push(path.resolve(templateOverride));
+
+    for (const candidate of candidates) {
+      try {
+        if (fs.existsSync(candidate)) {
+          return await fs.promises.readFile(candidate, "utf-8");
+        }
+      } catch {
+        // continue
+      }
+    }
+
+    if (templateOverride.includes("\n") || templateOverride.trimStart().startsWith("#")) {
+      return templateOverride;
+    }
+
+    console.error(
+      `codex-dev: specReviewTemplate override not found: ${templateOverride}`
+    );
+  }
+
+  const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+  const templatePath = path.join(moduleDir, "..", "..", "templates", "spec-reviewer.md");
+
+  try {
+    if (fs.existsSync(templatePath)) {
+      return await fs.promises.readFile(templatePath, "utf-8");
+    }
+  } catch {
+    // Fall through to default
+  }
+
+  return DEFAULT_SPEC_TEMPLATE;
+}
+
 function fillTemplate(
   template: string,
   values: Record<string, string>
@@ -371,11 +460,11 @@ const DEFAULT_SPEC_TEMPLATE = `# Spec Compliance Review
 
 You are reviewing whether an implementation matches its specification.
 
-## What Was Requested
+## Original Task (What Was Requested)
 
-{PLAN_OR_REQUIREMENTS}
+{TASK_SECTION}
 
-## What Was Implemented
+## Implementer's Claim (What They Say Was Done)
 
 {WHAT_WAS_IMPLEMENTED}
 
@@ -406,7 +495,7 @@ Verify everything independently by reading the actual code.
 
 ## Your Job
 
-Read the implementation code and verify:
+Compare the **Original Task** against the **actual code** (not the claim). Verify:
 
 **Missing requirements:**
 - Was everything that was requested actually implemented?
@@ -435,24 +524,17 @@ For each issue:
 - What was expected vs what was implemented
 `;
 
-const DEFAULT_QUALITY_TEMPLATE = `# Code Review Agent
+const DEFAULT_QUALITY_TEMPLATE = `# Code Quality Review
 
 You are reviewing code changes for production readiness.
 
-**Your task:**
-1. Review {WHAT_WAS_IMPLEMENTED}
-2. Compare against {PLAN_OR_REQUIREMENTS}
-3. Check code quality, architecture, testing
-4. Categorize issues by severity
-5. Assess production readiness
+## Original Task (What Was Requested)
 
-## What Was Implemented
+{TASK_SECTION}
 
-{DESCRIPTION}
+## Implementer's Claim (What They Say Was Done)
 
-## Requirements/Plan
-
-{PLAN_REFERENCE}
+{WHAT_WAS_IMPLEMENTED}
 
 ## Git Range to Review
 

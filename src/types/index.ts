@@ -84,9 +84,11 @@ export interface CodexDevConfig {
   // Non-tool-specific settings
   sessionCleanupHours?: number;
   reviewTemplate?: string;
+  specReviewTemplate?: string;
+  tddTemplate?: string;
   progressPort?: number;
 
-  // Per-tool overrides (keyed by tool name, e.g. "codex_write", "codex_review")
+  // Per-tool overrides (keyed by tool name, e.g. "write", "review")
   tools?: Record<string, ToolConfig>;
 }
 

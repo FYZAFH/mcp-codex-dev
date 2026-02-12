@@ -60,6 +60,8 @@ const ConfigSchema = z
     timeout: z.number().int().positive().optional(),
     sessionCleanupHours: z.number().int().positive().optional(),
     reviewTemplate: z.string().min(1).optional(),
+    specReviewTemplate: z.string().min(1).optional(),
+    tddTemplate: z.string().min(1).optional(),
     progressPort: z.number().int().positive().optional(),
     tools: z.record(z.string(), ToolConfigSchema).optional(),
   })
@@ -280,11 +282,11 @@ function applyEnvOverrides(
   }
 
   if (process.env.CODEX_DEV_REVIEW_MODEL) {
-    // Map to tools.codex_review.model
+    // Map to tools.review.model
     result.tools = {
       ...result.tools,
-      codex_review: {
-        ...result.tools?.codex_review,
+      review: {
+        ...result.tools?.review,
         model: process.env.CODEX_DEV_REVIEW_MODEL,
       },
     };

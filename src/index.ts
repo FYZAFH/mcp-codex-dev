@@ -3,7 +3,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { codexWrite } from "./tools/codex-write.js";
 import { codexExec } from "./tools/codex-exec.js";
 import { codexReview } from "./tools/codex-review.js";
 import { codexTdd } from "./tools/codex-tdd.js";
@@ -67,39 +66,6 @@ async function main() {
       },
       async (params, extra) => {
         const result = await codexExec(params, extra);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
-      }
-    );
-  }
-
-  // ─── write ─────────────────────────────────────────────────────────
-  if (isToolEnabled(config, "write")) {
-    server.tool(
-      "write",
-      "Invoke Codex CLI to write code. Supports creating new sessions and resuming existing sessions. " +
-        "For new sessions, pass instruction; for resuming, pass sessionId + instruction (revision feedback). " +
-        "Returns sessionId for subsequent resumption.",
-      {
-        instruction: z.string().describe("Detailed code writing instruction"),
-        sessionId: z
-          .string()
-          .optional()
-          .describe("Resume an existing session by ID (from previous write return value)"),
-        workingDirectory: z.string().optional().describe("Working directory path"),
-        planReference: z
-          .string()
-          .optional()
-          .describe("Plan file path or content summary, used as coding context"),
-      },
-      async (params, extra) => {
-        const result = await codexWrite(params, extra);
         return {
           content: [
             {

@@ -51,8 +51,7 @@ claude mcp add mcp-codex-dev -- cmd /c npx -y mcp-codex-dev
 | Tool | Description |
 |------|-------------|
 |`exec`|Clean dialogue without templates, supports session resume|
-| `write` | Write code via Codex CLI, supports session resume |
-|`tdd`|write tool with built-in test-driven development prompt template|
+|`tdd`|Codex CLI with built-in test-driven development prompt template|
 | `review` | Code review (spec + quality in parallel), supports resume |
 | `health` | Environment and config diagnostics |
 | `session_list` | List tracked sessions |
@@ -68,7 +67,7 @@ Create `~/.mcp/mcp-codex-dev/config.json`:
   "sandbox": "danger-full-access",
   "timeout": 300000,
   "tools": {
-    "write": { "model": "gpt-5.3-codex", "sandbox": "danger-full-access", "timeout": 2000000},
+    "tdd": { "model": "gpt-5.3-codex", "sandbox": "danger-full-access", "timeout": 2000000},
     "review": { "model": "gpt-5.2", "sandbox": "danger-full-access", "timeout": 3000000},
     "health": { "enabled": false }
   }

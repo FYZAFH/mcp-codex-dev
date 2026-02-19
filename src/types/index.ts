@@ -88,7 +88,7 @@ export interface CodexDevConfig {
   tddTemplate?: string;
   progressPort?: number;
 
-  // Per-tool overrides (keyed by tool name, e.g. "write", "review")
+  // Per-tool overrides (keyed by tool name, e.g. "tdd", "review")
   tools?: Record<string, ToolConfig>;
 }
 

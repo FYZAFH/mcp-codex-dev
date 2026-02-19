@@ -1,6 +1,6 @@
 # mcp-codex-dev
 
-[English](README.md) | 中文
+<p align="center"><a href="README.md">English</a> | 中文</p>
 
 将 [Codex CLI](https://github.com/openai/codex) 集成到 Claude Code 工作流的 MCP Server，支持会话管理和实时进度监控。
 

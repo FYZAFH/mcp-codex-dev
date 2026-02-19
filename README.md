@@ -1,6 +1,6 @@
 # mcp-codex-dev
 
-English | [中文](README.zh-CN.md)
+<p align="center">English | <a href="README.zh-CN.md">中文</a></p>
 
 MCP Server for integrating [Codex CLI](https://github.com/openai/codex) into Claude Code workflows with session management and real-time progress monitoring.
 

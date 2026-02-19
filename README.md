@@ -1,5 +1,7 @@
 # mcp-codex-dev
 
+English | [中文](README.zh-CN.md)
+
 MCP Server for integrating [Codex CLI](https://github.com/openai/codex) into Claude Code workflows with session management and real-time progress monitoring.
 
 <img width="1890" height="948" alt="image" src="https://github.com/user-attachments/assets/490a8cf6-1267-42cd-8f6f-e0a82c0dc6a3" />

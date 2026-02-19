@@ -52,11 +52,11 @@ claude mcp add mcp-codex-dev -- cmd /c npx -y mcp-codex-dev
 | 工具 | 描述 |
 |------|------|
 | `exec` | 无模板的纯对话，支持会话恢复 |
-| `tdd` | 内置测试驱动开发提示模板的 Codex CLI |
+| `tdd` | 内置测试驱动开发提示模板的 Codex CLI, 支持恢复 |
 | `review` | 代码审查（规格 + 质量并行检查），支持恢复 |
 | `health` | 环境和配置诊断 |
-| `session_list` | 列出已跟踪的会话 |
-| `session_discard` | 丢弃会话 |
+| `session_list` | 列出当前项目下的会话 |
+| `session_discard` | 丢弃指定会话或当前项目下的所有会话 |
 
 ## 配置
 

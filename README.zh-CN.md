@@ -4,7 +4,7 @@
 
 将 Codex CLI 集成到 Claude Code 工作流的 MCP Server，支持会话管理和实时进度监控。
 
-这个mcp包装了[superpowers](https://github.com/obra/superpowers)的两个skill: review(并行的功能审查与质量审查)和test-driven-develop, 为了实现claude编排, codex干活的模式.
+这个mcp包装了[superpowers](https://github.com/obra/superpowers)的两个skill的提示词: review(并行的功能审查与质量审查)和test-driven-develop, 为了实现claude编排, codex干活的模式.
 
 由于gpt在high和xhigh思考深度下速度实在太慢, 因此提供了一个可视化界面(默认在http://localhost:23120), 可以实时查看codex的输出, 但我更多仅仅使用它来观察codex是否挂了.
 

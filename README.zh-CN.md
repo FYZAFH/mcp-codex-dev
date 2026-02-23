@@ -6,7 +6,7 @@
 
 这个mcp包装了[superpowers](https://github.com/obra/superpowers)的两个skill: review(并行的功能审查与质量审查)和test-driven-develop, 为了实现claude编排, codex干活的模式.
 
-由于codex在high和xhigh思考深度下速度实在太慢, 因此提供了一个可视化界面, 可以查看codex的输出, 但我更多仅仅使用它来观察codex是否挂了.
+由于gpt在high和xhigh思考深度下速度实在太慢, 因此提供了一个可视化界面(默认在http://localhost:23120), 可以实时查看codex的输出, 但我更多仅仅使用它来观察codex是否挂了.
 
 <img width="1890" height="948" alt="image" src="https://github.com/user-attachments/assets/490a8cf6-1267-42cd-8f6f-e0a82c0dc6a3" />
 

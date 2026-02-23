@@ -2,9 +2,15 @@
 
 <p align="center"><a href="README.md">English</a> | 中文</p>
 
-将 [Codex CLI](https://github.com/openai/codex) 集成到 Claude Code 工作流的 MCP Server，支持会话管理和实时进度监控。
+将 Codex CLI 集成到 Claude Code 工作流的 MCP Server，支持会话管理和实时进度监控。
+
+这个mcp包装了[superpowers](https://github.com/obra/superpowers)的两个skill: review(并行的功能审查与质量审查)和test-driven-develop, 为了实现claude编排, codex干活的模式.
+
+由于codex在high和xhigh思考深度下速度实在太慢, 因此提供了一个可视化界面, 可以查看codex的输出, 但我更多仅仅使用它来观察codex是否挂了.
 
 <img width="1890" height="948" alt="image" src="https://github.com/user-attachments/assets/490a8cf6-1267-42cd-8f6f-e0a82c0dc6a3" />
+
+写这个mcp主要是因为我从事物理算法的工作, claude在这方面远不如gpt; 并且据我观察, 至少我所处的领域claude模型在细节任务、调查bug、review等方面逊色于gpt模型. 我认为claude code cli和superpowers很好用, 比codex cli更优秀, 我离不开claude cli和gpt模型, 能取长补短那就更好了.
 
 ## 安装
 
